@@ -1,9 +1,17 @@
 import pytesseract
 import cv2
+# import numpy as np
+# import pandas as pd
+# import pyautogui
 from PyQt5.QtCore import QTimer
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-# may need to update the path to the location of tesseract executable on your machine
+
+def check_image_ratio(image):
+    height, width, _ = image.shape
+    if height > width:
+        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    return image
 
 def remove_line(image):
         removed = image.copy()

@@ -216,7 +216,13 @@ class MainWindow(QtWidgets.QWidget):
                 QMessageBox.warning(self, "Nothing to save", "The text area is empty.")
 
     def open_about_window(self):
-        QMessageBox.information(self, 'Information', 'Thanks giving: Welcome to our OCR Application. This here you can do everything with data have picture format <3 !!!\n\n'
+        QMessageBox.information(self, 'Information', 'Welcome to our ETFT Application\n\n'
+                                                   + 'Are you searching for a convenient and fast solution for extracting exam scores from student transcripts? Our OCR application is the solution you need.\n\n '
+                                                   + 'Using OCR technology, our application helps you convert the text information on student transcripts into easily accessible and quick-to-read score formats. This saves time and effort in the process of inputting exam scores.\n\n'
+                                                   + 'To use our application, all you need to do is take a picture of the student transcript using your phone or camera, then upload the image to the application. The OCR technology will automatically recognize and extract the exam score information from the transcript and display it on your screen.\n\n'
+                                                   + 'With a user-friendly and easy-to-use interface, our application helps you save time and improve the efficiency of your work, especially for those who need to input exam scores for multiple students.\n\n'
+                                                   + 'With our OCR application, you can easily and quickly extract exam scores from student transcripts and manage them efficiently.\n\n'
                                                    + '--\n'
                                                    + 'Author: B, N, K, T, T\n'
-                                                   + 'Version: 1.0.1 beta')
+                                                   + 'Version: 1.0\n'
+                                                   + 'The project name: "Build an App to Recognize Test Scores From Photos Capture Report Cards Using OCR Technology"' )

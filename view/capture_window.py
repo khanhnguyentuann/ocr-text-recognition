@@ -4,18 +4,20 @@ from PyQt5.QtWidgets import QFileDialog, QLabel, QPushButton, QGridLayout, QWidg
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QImage, QPixmap
 
+
 class CaptureWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        
         capture_window = QMainWindow(self)
         capture_window.setGeometry(600, 100, 700, 700)
-        capture_window.setWindowTitle('Webcam')
+        capture_window.setWindowTitle('ETFT - Webcam')
 
         # Add a label to the new window to display the captured image
         self.capture_label = QLabel(capture_window)
         #self.capture_label.setStyleSheet('border: 1px solid black')
         self.capture_label.setFixedSize(700, 700)   
-
+    
         # Create a button for capturing the image
         capture_button = QPushButton('Capture', self)
         capture_button.setFixedSize(100, 30)
@@ -53,12 +55,12 @@ class CaptureWindow(QtWidgets.QWidget):
 
         # Display the current frame in a separate window
         ret, frame = self.cap.read()
-        cv2.imshow("Select ROI", frame)
-        cv2.moveWindow("Select ROI", 630, 100)
+        cv2.imshow("Drop your image", frame)
+        cv2.moveWindow("Drop your image", 630, 100)
 
         # Allow the user to select the ROI
-        roi = cv2.selectROI("Select ROI", frame, fromCenter=True, showCrosshair=True)
-        cv2.destroyWindow("Select ROI")
+        roi = cv2.selectROI("Drop your image", frame, fromCenter=True, showCrosshair=True)
+        cv2.destroyWindow("Drop your image")
 
         # Crop the frame using the ROI
         x, y, w, h = roi
@@ -66,12 +68,6 @@ class CaptureWindow(QtWidgets.QWidget):
 
         self.last_frame = cropped_frame
         return ret, cropped_frame
-
-    """def take_screenshot(self):
-        self.timer.stop()
-        ret, frame = self.cap.read()
-        self.last_frame = frame
-        return ret, frame"""
     
     def save_capture(self):
         frame = self.last_frame
