@@ -1,221 +1,189 @@
 """
-OCR Controller - Connects GUI signals to model, controls application flow
+OCR Controller - Orchestrates the application flow by connecting services to the view.
+
+This module contains the main controller for the OCR application. It follows the
+Model-View-Controller (MVC) pattern, where the controller's primary role is to
+act as an intermediary between the view (GUI) and the services that encapsulate
+the application's business logic (e.g., file handling, OCR processing).
 """
-import os
-import logging
-from PySide6.QtCore import QObject, QThread, Signal
-from PySide6.QtWidgets import QApplication, QFileDialog
-from src.model.ocr_model import OCRModel
+from typing import Optional
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QApplication
 from src.view.main_window import MainWindow
+from src.services.file_service import FileService
+from src.services.ocr_service import OCRService
+from src.services.log_service import get_logger, setup_logging
 
-# Setup logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-class OCRWorker(QThread):
-    """Worker thread for OCR processing to avoid blocking UI"""
-
-    text_extracted = Signal(str)
-    error_occurred = Signal(str)
-
-    def __init__(self, model: OCRModel, image_path: str):
-        super().__init__()
-        self.model = model
-        self.image_path = image_path
-
-    def run(self):
-        """Run OCR extraction in separate thread"""
-        try:
-            text = self.model.extract_text(self.image_path)
-            self.text_extracted.emit(text)
-        except Exception as e:
-            self.error_occurred.emit(str(e))
+# Initialize the logging system for the entire application
+setup_logging()
+logger = get_logger(__name__)
 
 
 class OCRController(QObject):
-    """Controller class that manages the interaction between Model and View"""
+    """
+    The main controller that manages the interaction between the UI and services.
 
-    def __init__(self):
+    This class initializes the main window and all necessary services. It connects
+    the signals emitted by the view to the appropriate handler methods, which then
+    delegate the work to the services.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initializes the controller, view, and services.
+        """
         super().__init__()
-        self.model = None
-        self.view = None
-        self.worker = None
-        self.current_image_path = None
-
-        # Initialize model
-        self.initialize_model()
-
-        # Initialize view
-        self.initialize_view()
-
-        # Connect signals
+        self.view: MainWindow = MainWindow()
+        self.file_service: FileService = FileService()
+        self.ocr_service: OCRService = OCRService(languages=['en', 'vi'])
+        self.current_image_path: Optional[str] = None
         self.connect_signals()
 
-    def select_image_file(self):
-        """Open file dialog to select image."""
-        file_dialog = QFileDialog(self.view)
-        file_path, _ = file_dialog.getOpenFileName(
-            self.view,
-            "Select Image",
-            "",
-            "Images (*.png *.jpg *.jpeg *.bmp *.tiff);;All Files (*)"
+    def connect_signals(self) -> None:
+        """
+        Connects signals from the view to the controller's handler methods.
+        """
+        self.view.open_file_requested.connect(self.select_image_file)
+        self.view.save_text_requested.connect(self.save_text_to_file)
+        self.view.image_selected.connect(self.on_image_selected)
+        self.view.extract_text_requested.connect(self.on_extract_text_requested)
+        self.view.clear_text_requested.connect(self.on_clear_text_requested)
+        self.view.copy_text_requested.connect(self.on_copy_text_requested)
+
+    def show_view(self) -> None:
+        """
+        Displays the main application window.
+        """
+        self.view.show()
+
+    def select_image_file(self) -> None:
+        """
+        Handles the user's request to select an image file from the disk.
+        """
+        file_path = self.file_service.select_image_file(self.view)
+        if file_path:
+            if self.file_service.is_valid_image(file_path):
+                self.view.set_image(file_path)
+                self.on_image_selected(file_path)
+            else:
+                self.view.show_warning("The selected file is not a valid image format.")
+
+    def on_image_selected(self, image_path: str) -> None:
+        """
+        Callback for when an image is selected, either by file dialog or drag-and-drop.
+
+        Args:
+            image_path (str): The path of the selected image file.
+        """
+        self.current_image_path = image_path
+        logger.info(f"Image has been selected for processing: {image_path}")
+
+    def on_extract_text_requested(self) -> None:
+        """
+        Initiates the text extraction process for the currently selected image.
+        """
+        if not self.current_image_path:
+            self.view.show_warning("Please select an image before extracting text.")
+            return
+
+        if not self.file_service.is_valid_image(self.current_image_path):
+            self.view.show_error("The selected file is not a valid or existing image.")
+            return
+
+        self.view.show_progress(True)
+        self.ocr_service.extract_text(
+            self.current_image_path,
+            success_callback=self.on_text_extracted,
+            error_callback=self.on_extraction_error,
+            finished_callback=self.on_extraction_finished
         )
 
-        if file_path:
-            self.view.set_image(file_path)
-            self.on_image_selected(file_path)
+    def on_text_extracted(self, text: str) -> None:
+        """
+        Callback for when text has been successfully extracted from an image.
 
-    def initialize_model(self):
-        """Initialize the OCR model"""
-        try:
-            self.model = OCRModel(languages=['en', 'vi'])
-        except Exception as e:
-            # If model initialization fails, we'll handle it gracefully
-            print(f"Warning: Failed to initialize OCR model: {e}")
-            self.model = None
-
-    def initialize_view(self):
-        """Initialize the main window view"""
-        self.view = MainWindow()
-
-    def connect_signals(self):
-        """Connect view signals to controller methods"""
-        if self.view:
-            # File operations
-            self.view.open_file_requested.connect(self.select_image_file)
-            self.view.save_text_requested.connect(self.save_text_to_file)
-
-            # OCR operations
-            self.view.image_selected.connect(self.on_image_selected)
-            self.view.extract_text_requested.connect(
-                self.on_extract_text_requested)
-
-            # Text management
-            self.view.clear_text_requested.connect(
-                self.on_clear_text_requested)
-            self.view.copy_text_requested.connect(self.on_copy_text_requested)
-
-    def show_view(self):
-        """Show the main window"""
-        if self.view:
-            self.view.show()
-
-    def on_image_selected(self, image_path: str):
-        """Handle image selection"""
-        self.current_image_path = image_path
-        logging.info(f"Image selected: {image_path}")
-
-    def on_extract_text_requested(self):
-        """Handle text extraction request"""
-        if not self.model:
-            logging.error("OCR model not initialized.")
-            self.view.show_error(
-                "OCR model not initialized. Please check your installation.")
-            return
-
-        if not self.current_image_path:
-            self.view.show_warning("Please select an image first!")
-            return
-
-        if not os.path.exists(self.current_image_path):
-            logging.error(f"Image file not found at {self.current_image_path}")
-            self.view.show_error("Selected image file does not exist!")
-            return
-
-        # Show progress
-        self.view.show_progress(True)
-
-        # Start OCR processing in worker thread
-        self.worker = OCRWorker(self.model, self.current_image_path)
-        self.worker.text_extracted.connect(self.on_text_extracted)
-        self.worker.error_occurred.connect(self.on_extraction_error)
-        self.worker.finished.connect(self.on_extraction_finished)
-        self.worker.start()
-
-    def on_text_extracted(self, text: str):
-        """Handle successful text extraction"""
+        Args:
+            text (str): The extracted text.
+        """
         self.view.set_extracted_text(text)
-        logging.info("Text extracted successfully.")
-        self.view.show_success("Text extracted successfully!")
+        self.view.show_success("Text extraction completed successfully.")
+        logger.info("Successfully extracted text from the image.")
 
-    def on_extraction_error(self, error_message: str):
-        """Handle extraction error"""
-        logging.error(f"OCR extraction failed: {error_message}")
-        self.view.show_error(f"Error during text extraction: {error_message}")
+    def on_extraction_error(self, error_message: str) -> None:
+        """
+        Callback for handling errors that occur during text extraction.
 
-    def on_extraction_finished(self):
-        """Handle extraction completion (success or failure)"""
+        Args:
+            error_message (str): The error message from the OCR service.
+        """
+        self.view.show_error(f"An error occurred during text extraction: {error_message}")
+        logger.error(f"OCR extraction process failed with error: {error_message}")
+
+    def on_extraction_finished(self) -> None:
+        """
+        Callback for when the extraction process is finished, regardless of outcome.
+        """
         self.view.show_progress(False)
-        if self.worker:
-            self.worker.deleteLater()
-            self.worker = None
+        logger.info("The OCR extraction process has finished.")
 
-    def save_text_to_file(self):
-        """Handle save text request"""
+    def save_text_to_file(self) -> None:
+        """
+        Handles the user's request to save the extracted text to a file.
+        """
         text_content = self.view.get_text_content()
         if not text_content:
-            self.view.show_warning("Nothing to save!")
+            self.view.show_warning("There is no text content to save.")
             return
 
-        file_dialog = QFileDialog(self.view)
-        file_path, _ = file_dialog.getSaveFileName(
-            self.view,
-            "Save Text",
-            "",
-            "Text Files (*.txt);;All Files (*)"
-        )
+        saved_path = self.file_service.save_text_to_file(text_content, self.view)
+        if saved_path:
+            self.view.show_success(f"Text was successfully saved to {saved_path}")
+        else:
+            self.view.show_error("The file could not be saved.")
 
-        if file_path:
-            try:
-                with open(file_path, 'w', encoding='utf-8') as file:
-                    file.write(text_content)
-                logging.info(f"Text saved to {file_path}")
-                self.view.show_success(
-                    f"Text saved successfully to {file_path}")
-            except IOError as e:
-                logging.error(f"File save error: {e}")
-                self.view.show_error(f"Error saving file: {str(e)}")
-
-    def on_clear_text_requested(self):
-        """Handle clear text request"""
+    def on_clear_text_requested(self) -> None:
+        """
+        Handles the user's request to clear the text display area.
+        """
         self.view.clear_text()
+        logger.info("The text area has been cleared.")
 
-    def on_copy_text_requested(self):
-        """Handle copy text request"""
+    def on_copy_text_requested(self) -> None:
+        """
+        Handles the user's request to copy the extracted text to the clipboard.
+        """
         text = self.view.get_text_content()
         if text:
             clipboard = QApplication.clipboard()
             clipboard.setText(text)
             self.view.set_copy_button_text("Copied ✓")
-            logging.info("Text copied to clipboard.")
+            logger.info("Extracted text has been copied to the clipboard.")
         else:
-            self.view.show_warning("Nothing to copy!")
+            self.view.show_warning("There is no text to copy.")
 
-    def cleanup(self):
-        """Cleanup resources"""
-        if self.worker and self.worker.isRunning():
-            self.worker.quit()
-            self.worker.wait()
+    def cleanup(self) -> None:
+        """
+        Performs necessary cleanup operations before the application exits.
+        """
+        self.ocr_service.cleanup()
+        logger.info("Application cleanup has been completed.")
 
 
-def run_application():
-    """Main function to run the OCR application"""
+def run_application() -> int:
+    """
+    The main entry point for running the OCR application.
+
+    This function initializes the `QApplication`, creates the `OCRController`,
+    shows the main view, and starts the application's event loop. It also
+    ensures that cleanup is performed when the application exits.
+
+    Returns:
+        int: The exit code of the application.
+    """
     app = QApplication([])
-
-    # Apply stylesheet if available
-    try:
-        if os.path.exists("style.qss"):
-            with open("style.qss", "r", encoding="utf-8") as f:
-                app.setStyleSheet(f.read())
-    except Exception as e:
-        print(f"Warning: Could not load stylesheet: {e}")
-
-    # Create and run controller
     controller = OCRController()
     controller.show_view()
 
-    # Run application
     try:
         exit_code = app.exec()
     finally:
