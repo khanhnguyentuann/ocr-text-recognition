@@ -9,3 +9,4 @@ numpy>=1.21.0
 pytesseract>=0.3.10
 openpyxl>=3.0.0
 xlsxwriter>=3.0.0
+scikit-learn>=1.0.0
