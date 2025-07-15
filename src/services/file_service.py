@@ -56,6 +56,51 @@ class FileService:
         return None
 
     @staticmethod
+    def save_csv_file(parent_widget: Optional[QWidget] = None) -> Optional[str]:
+        """Opens a file dialog for saving CSV files."""
+        file_path, _ = QFileDialog.getSaveFileName(
+            parent_widget,
+            "Export CSV",
+            "",
+            "CSV Files (*.csv);;All Files (*)"
+        )
+        if file_path:
+            logger.info(f"User selected CSV export path: {file_path}")
+            return file_path
+        logger.info("CSV export was cancelled by the user.")
+        return None
+
+    @staticmethod
+    def save_json_file(parent_widget: Optional[QWidget] = None) -> Optional[str]:
+        """Opens a file dialog for saving JSON files."""
+        file_path, _ = QFileDialog.getSaveFileName(
+            parent_widget,
+            "Export JSON",
+            "",
+            "JSON Files (*.json);;All Files (*)"
+        )
+        if file_path:
+            logger.info(f"User selected JSON export path: {file_path}")
+            return file_path
+        logger.info("JSON export was cancelled by the user.")
+        return None
+
+    @staticmethod
+    def save_excel_file(parent_widget: Optional[QWidget] = None) -> Optional[str]:
+        """Opens a file dialog for saving Excel files."""
+        file_path, _ = QFileDialog.getSaveFileName(
+            parent_widget,
+            "Export Excel",
+            "",
+            "Excel Files (*.xlsx);;All Files (*)"
+        )
+        if file_path:
+            logger.info(f"User selected Excel export path: {file_path}")
+            return file_path
+        logger.info("Excel export was cancelled by the user.")
+        return None
+
+    @staticmethod
     def is_valid_image(file_path: str) -> bool:
         # Validates if a given file path points to a valid and existing image file.
         if not os.path.exists(file_path):

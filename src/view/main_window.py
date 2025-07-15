@@ -4,7 +4,9 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QTextEdit, QMessageBox,
-    QProgressBar, QMenuBar, QApplication, QSplitter, QSizePolicy
+    QProgressBar, QMenuBar, QApplication, QSplitter, QSizePolicy,
+    QTableWidget, QTableWidgetItem, QTabWidget, QHeaderView,
+    QAbstractItemView, QGroupBox, QFormLayout
 )
 from PySide6.QtCore import Qt, Signal, QSettings
 from PySide6.QtGui import QPixmap, QIcon, QAction, QDragEnterEvent, QDropEvent, QResizeEvent
@@ -23,8 +25,14 @@ class MainWindow(QMainWindow):
     save_text_requested = Signal()
     image_selected = Signal(str)
     extract_text_requested = Signal()
+    extract_table_requested = Signal()
     clear_text_requested = Signal()
     copy_text_requested = Signal()
+    copy_table_requested = Signal()
+    export_csv_requested = Signal()
+    export_json_requested = Signal()
+    export_excel_requested = Signal()
+    capture_webcam_requested = Signal()
 
     def __init__(self) -> None:
         # Initializes the main window, UI components, and theme settings.
@@ -40,9 +48,9 @@ class MainWindow(QMainWindow):
 
     def setup_ui(self) -> None:
         # Sets up the main user interface, including layouts and widgets.
-        self.setWindowTitle("OCR Text Recognition")
-        self.setMinimumSize(800, 600)
-        self.resize(1200, 700)
+        self.setWindowTitle("OCR Table Recognition")
+        self.setMinimumSize(1000, 700)
+        self.resize(1400, 800)
         self.set_window_icon()
 
         central_widget = QWidget()
@@ -57,47 +65,116 @@ class MainWindow(QMainWindow):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(10)
 
-        self.image_label = QLabel("Drag & Drop\nImage Here")
+        self.image_label = QLabel("Drag & Drop Image Here\nor\nClick to Upload")
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.image_label.setAcceptDrops(True)
-        self.image_label.setStyleSheet("border: 2px dashed #aaa;")
+        self.image_label.setStyleSheet("border: 2px dashed #aaa; font-size: 14px;")
+        self.image_label.setMinimumHeight(300)
 
-        left_bottom_bar = QHBoxLayout()
+        # Image control buttons
+        image_controls = QHBoxLayout()
+        self.btn_upload_image = QPushButton("Upload Image")
+        self.btn_capture_webcam = QPushButton("Capture Webcam")
+        image_controls.addWidget(self.btn_upload_image)
+        image_controls.addWidget(self.btn_capture_webcam)
+
+        # OCR control buttons
+        ocr_controls = QHBoxLayout()
         self.btn_extract_text = QPushButton("Extract Text")
+        self.btn_extract_table = QPushButton("Extract Table")
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
-        left_bottom_bar.addWidget(self.btn_extract_text)
-        left_bottom_bar.addWidget(self.progress_bar)
+        ocr_controls.addWidget(self.btn_extract_text)
+        ocr_controls.addWidget(self.btn_extract_table)
+        ocr_controls.addWidget(self.progress_bar)
 
         left_layout.addWidget(self.image_label, 1)
-        left_layout.addLayout(left_bottom_bar)
+        left_layout.addLayout(image_controls)
+        left_layout.addLayout(ocr_controls)
 
-        # --- Right Panel (Text Display) ---
+        # --- Right Panel (Results Display) ---
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(10)
 
+        # Tab widget for different result views
+        self.tab_widget = QTabWidget()
+        
+        # Text tab
+        text_tab = QWidget()
+        text_layout = QVBoxLayout(text_tab)
         self.text_edit = QTextEdit()
         self.text_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        right_bottom_bar = QHBoxLayout()
+        
+        text_controls = QHBoxLayout()
         self.btn_clear_text = QPushButton("Clear")
-        self.btn_copy_text = QPushButton("Copy")
-        right_bottom_bar.addStretch()
-        right_bottom_bar.addWidget(self.btn_clear_text)
-        right_bottom_bar.addWidget(self.btn_copy_text)
+        self.btn_copy_text = QPushButton("Copy Text")
+        text_controls.addStretch()
+        text_controls.addWidget(self.btn_clear_text)
+        text_controls.addWidget(self.btn_copy_text)
+        
+        text_layout.addWidget(self.text_edit, 1)
+        text_layout.addLayout(text_controls)
+        self.tab_widget.addTab(text_tab, "Text Results")
 
-        right_layout.addWidget(self.text_edit, 1)
-        right_layout.addLayout(right_bottom_bar)
+        # Table tab
+        table_tab = QWidget()
+        table_layout = QVBoxLayout(table_tab)
+        
+        self.table_widget = QTableWidget()
+        self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.table_widget.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.table_widget.setAlternatingRowColors(True)
+        self.table_widget.horizontalHeader().setStretchLastSection(True)
+        self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        
+        table_controls = QHBoxLayout()
+        self.btn_copy_table = QPushButton("Copy Table")
+        self.btn_export_csv = QPushButton("Export CSV")
+        self.btn_export_json = QPushButton("Export JSON")
+        self.btn_export_excel = QPushButton("Export Excel")
+        self.btn_clear_table = QPushButton("Clear")
+        
+        table_controls.addWidget(self.btn_copy_table)
+        table_controls.addWidget(self.btn_export_csv)
+        table_controls.addWidget(self.btn_export_json)
+        table_controls.addWidget(self.btn_export_excel)
+        table_controls.addStretch()
+        table_controls.addWidget(self.btn_clear_table)
+        
+        table_layout.addWidget(self.table_widget, 1)
+        table_layout.addLayout(table_controls)
+        self.tab_widget.addTab(table_tab, "Table Results")
+
+        # Metadata tab
+        metadata_tab = QWidget()
+        metadata_layout = QVBoxLayout(metadata_tab)
+        
+        metadata_group = QGroupBox("Detected Metadata")
+        self.metadata_form = QFormLayout(metadata_group)
+        
+        self.metadata_labels = {}
+        metadata_fields = ['Student Name', 'Class', 'School', 'Subject', 'Semester', 'Year']
+        for field in metadata_fields:
+            label = QLabel("Not detected")
+            label.setStyleSheet("color: #666; font-style: italic;")
+            self.metadata_labels[field.lower().replace(' ', '_')] = label
+            self.metadata_form.addRow(f"{field}:", label)
+        
+        metadata_layout.addWidget(metadata_group)
+        metadata_layout.addStretch()
+        self.tab_widget.addTab(metadata_tab, "Metadata")
+
+        right_layout.addWidget(self.tab_widget, 1)
 
         # --- Splitter ---
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(left_widget)
         splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 1)
+        splitter.setStretchFactor(1, 2)  # Give more space to results
         main_layout.addWidget(splitter)
 
         self.setAcceptDrops(True)
@@ -142,9 +219,17 @@ class MainWindow(QMainWindow):
 
     def setup_connections(self) -> None:
         # Connects widget signals to their respective handler methods or signals.
+        self.btn_upload_image.clicked.connect(self.open_file_requested.emit)
+        self.btn_capture_webcam.clicked.connect(self.capture_webcam_requested.emit)
         self.btn_extract_text.clicked.connect(self.request_text_extraction)
+        self.btn_extract_table.clicked.connect(self.request_table_extraction)
         self.btn_clear_text.clicked.connect(self.clear_text_requested.emit)
         self.btn_copy_text.clicked.connect(self.copy_text_requested.emit)
+        self.btn_clear_table.clicked.connect(self.clear_table)
+        self.btn_copy_table.clicked.connect(self.copy_table_requested.emit)
+        self.btn_export_csv.clicked.connect(self.export_csv_requested.emit)
+        self.btn_export_json.clicked.connect(self.export_json_requested.emit)
+        self.btn_export_excel.clicked.connect(self.export_excel_requested.emit)
 
     def set_window_icon(self) -> None:
         # Sets the main window icon, with a fallback for compatibility.
@@ -313,3 +398,87 @@ class MainWindow(QMainWindow):
         settings = QSettings("MyCompany", "OCRApp")
         self.is_dark_mode = settings.value("is_dark_mode", False, type=bool)
         self.apply_theme()
+
+    def request_table_extraction(self) -> None:
+        """Emits a signal to request table extraction if an image is loaded."""
+        if not self.image_path:
+            self.show_warning("Please select an image first.")
+            return
+        self.extract_table_requested.emit()
+
+    def set_table_data(self, df) -> None:
+        """Populates the table widget with DataFrame data."""
+        if df.empty:
+            self.table_widget.setRowCount(0)
+            self.table_widget.setColumnCount(0)
+            return
+
+        # Set table dimensions
+        self.table_widget.setRowCount(len(df))
+        self.table_widget.setColumnCount(len(df.columns))
+        
+        # Set column headers
+        self.table_widget.setHorizontalHeaderLabels(df.columns.tolist())
+        
+        # Populate table with data
+        for row in range(len(df)):
+            for col in range(len(df.columns)):
+                item = QTableWidgetItem(str(df.iloc[row, col]))
+                self.table_widget.setItem(row, col, item)
+        
+        # Auto-resize columns to content
+        self.table_widget.resizeColumnsToContents()
+        
+        # Switch to table tab
+        self.tab_widget.setCurrentIndex(1)
+
+    def clear_table(self) -> None:
+        """Clears the table widget."""
+        self.table_widget.setRowCount(0)
+        self.table_widget.setColumnCount(0)
+
+    def get_table_data(self):
+        """Retrieves data from the table widget as a list of lists."""
+        if self.table_widget.rowCount() == 0:
+            return []
+        
+        data = []
+        # Get headers
+        headers = []
+        for col in range(self.table_widget.columnCount()):
+            header_item = self.table_widget.horizontalHeaderItem(col)
+            headers.append(header_item.text() if header_item else f"Column_{col+1}")
+        data.append(headers)
+        
+        # Get data rows
+        for row in range(self.table_widget.rowCount()):
+            row_data = []
+            for col in range(self.table_widget.columnCount()):
+                item = self.table_widget.item(row, col)
+                row_data.append(item.text() if item else "")
+            data.append(row_data)
+        
+        return data
+
+    def set_metadata(self, metadata: dict) -> None:
+        """Updates the metadata display with detected information."""
+        for key, value in metadata.items():
+            if key in self.metadata_labels:
+                if value:
+                    self.metadata_labels[key].setText(str(value))
+                    self.metadata_labels[key].setStyleSheet("color: #000; font-style: normal;")
+                else:
+                    self.metadata_labels[key].setText("Not detected")
+                    self.metadata_labels[key].setStyleSheet("color: #666; font-style: italic;")
+
+    def clear_metadata(self) -> None:
+        """Clears all metadata fields."""
+        for label in self.metadata_labels.values():
+            label.setText("Not detected")
+            label.setStyleSheet("color: #666; font-style: italic;")
+
+    def clear_all_results(self) -> None:
+        """Clears all results (text, table, and metadata)."""
+        self.clear_text()
+        self.clear_table()
+        self.clear_metadata()
