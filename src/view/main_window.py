@@ -2,6 +2,8 @@
 Main Window View - PySide6 GUI for OCR application
 """
 import os
+import sys
+from pathlib import Path
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QPushButton, QLabel, QTextEdit, QFileDialog, QMessageBox,
@@ -9,6 +11,14 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QPixmap, QIcon, QAction
+
+# Add resources to path for resource configuration
+try:
+    from resources.resource_config import ResourcePaths, get_icon_path
+except (ImportError, ModuleNotFoundError):
+    # Fallback to old structure if new resources not available
+    ResourcePaths = None
+    get_icon_path = None
 
 
 class MainWindow(QMainWindow):
@@ -90,24 +100,33 @@ class MainWindow(QMainWindow):
     def setup_menu(self):
         """Setup menu bar"""
         menubar = self.menuBar()
-        
+
         # File menu
         file_menu = menubar.addMenu("File")
-        
+
         # Open action
-        open_action = QAction("Open", self)
+        if get_icon_path and get_icon_path("open").exists():
+            open_action = QAction(QIcon(str(get_icon_path("open"))), "Open", self)
+        else:
+            open_action = QAction("Open", self)
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(self.select_image)
         file_menu.addAction(open_action)
-        
+
         # Save action
-        save_action = QAction("Save", self)
+        if get_icon_path and get_icon_path("save").exists():
+            save_action = QAction(QIcon(str(get_icon_path("save"))), "Save", self)
+        else:
+            save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_text)
         file_menu.addAction(save_action)
-        
+
         # Extract action
-        extract_action = QAction("Extract", self)
+        if get_icon_path and get_icon_path("extract").exists():
+            extract_action = QAction(QIcon(str(get_icon_path("extract"))), "Extract", self)
+        else:
+            extract_action = QAction("Extract", self)
         extract_action.setShortcut("Ctrl+E")
         extract_action.triggered.connect(self.request_text_extraction)
         menubar.addAction(extract_action)
@@ -127,9 +146,13 @@ class MainWindow(QMainWindow):
     def set_window_icon(self):
         """Set window icon"""
         try:
-            icon_path = os.path.join("resources", "favicon", "favicon.ico")
-            if os.path.exists(icon_path):
-                self.setWindowIcon(QIcon(icon_path))
+            if ResourcePaths and ResourcePaths.FAVICON.exists():
+                self.setWindowIcon(QIcon(str(ResourcePaths.FAVICON)))
+            else:
+                # Fallback to old path for compatibility
+                icon_path = os.path.join("resources", "favicon", "favicon.ico")
+                if os.path.exists(icon_path):
+                    self.setWindowIcon(QIcon(icon_path))
         except Exception:
             pass  # Ignore if icon not found
     

@@ -8,10 +8,16 @@ import tempfile
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-# Add src directory to Python path for testing
+# Add src and resources directories to Python path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'resources'))
 
 from src.model.ocr_model import OCRModel
+try:
+    from resources.resource_config import get_test_image_path, ResourcePaths
+except ImportError:
+    get_test_image_path = None
+    ResourcePaths = None
 
 
 class TestOCRModel:
@@ -60,16 +66,24 @@ class TestOCRModel:
     @pytest.fixture
     def existing_test_image(self):
         """Use existing test image if available"""
-        test_image_paths = [
-            "resources/input_mages/image1.png",
-            "resources/input_mages/Demo/image1.png",
-            "resources/input_mages/khanh.png"
-        ]
-        
+        if get_test_image_path:
+            test_image_paths = [
+                get_test_image_path('samples', 'image1.png'),
+                get_test_image_path('demo', 'image1.png'),
+                get_test_image_path('samples', 'khanh.png')
+            ]
+        else:
+            # Fallback for compatibility
+            test_image_paths = [
+                "resources/input_mages/image1.png",
+                "resources/input_mages/Demo/image1.png",
+                "resources/input_mages/khanh.png"
+            ]
+
         for path in test_image_paths:
             if os.path.exists(path):
-                return path
-        
+                return str(path)
+
         pytest.skip("No existing test images found")
     
     def test_model_initialization(self):
