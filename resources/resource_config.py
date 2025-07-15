@@ -4,9 +4,13 @@ Centralized configuration for all application resources
 """
 import os
 from pathlib import Path
+from PySide6.QtGui import QIcon
 
 # Base resource directory
 RESOURCES_BASE = Path(__file__).parent
+
+# Application constants
+VALID_IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.tiff')
 
 class ResourcePaths:
     """Centralized resource path management"""
@@ -122,6 +126,22 @@ def get_icon_path(icon_name: str) -> Path:
         icon_name += '.png'
     
     return ResourcePaths.ICONS / icon_name
+
+
+def get_icon(icon_name: str) -> QIcon:
+    """
+    Get a QIcon object for a given icon name, with fallback.
+
+    Args:
+        icon_name: The name of the icon.
+
+    Returns:
+        A QIcon object. Returns an empty QIcon if not found.
+    """
+    path = get_icon_path(icon_name)
+    if path.exists():
+        return QIcon(str(path))
+    return QIcon()  # Return empty icon as a fallback
 
 
 def get_test_image_path(category: str, filename: str) -> Path:
