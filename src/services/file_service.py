@@ -1,10 +1,4 @@
-"""
-File Service - Handles file opening, saving, and validation for the OCR application.
-
-This module provides a `FileService` class that encapsulates all file-related
-operations, such as opening image files, saving text files, and validating
-file types. This helps to keep the controller logic clean and focused.
-"""
+# File Service - Handles file opening, saving, and validation for the OCR application.
 import os
 from typing import Optional
 from PySide6.QtWidgets import QFileDialog, QWidget
@@ -18,30 +12,11 @@ VALID_IMAGE_EXTENSIONS: tuple[str, ...] = ('.png', '.jpg', '.jpeg', '.bmp', '.ti
 
 
 class FileService:
-    """
-    A service class dedicated to handling all file-related operations.
-
-    This class uses static methods to provide utility functions for file
-    selection, saving, and validation, abstracting the underlying details
-    of file dialogs and file system checks.
-    """
+    # A service class dedicated to handling all file-related operations.
 
     @staticmethod
     def select_image_file(parent_widget: Optional[QWidget] = None) -> Optional[str]:
-        """
-        Opens a file dialog for the user to select an image file.
-
-        This method displays a standard file dialog, filtered to show valid
-        image file types. It logs the selected file path for debugging purposes.
-
-        Args:
-            parent_widget (Optional[QWidget]): The parent widget for the dialog.
-                                               This helps in proper window layering.
-
-        Returns:
-            Optional[str]: The absolute path to the selected image file, or None
-                           if the user cancels the dialog.
-        """
+        # Opens a file dialog for the user to select an image file.
         file_path, _ = QFileDialog.getOpenFileName(
             parent_widget,
             "Select Image",
@@ -56,21 +31,7 @@ class FileService:
 
     @staticmethod
     def save_text_to_file(text_content: str, parent_widget: Optional[QWidget] = None) -> Optional[str]:
-        """
-        Saves the given text content to a file chosen by the user.
-
-        This method opens a save file dialog, allowing the user to specify a
-        location and filename. It handles potential `IOError` exceptions during
-        the file writing process.
-
-        Args:
-            text_content (str): The string content to be saved to the file.
-            parent_widget (Optional[QWidget]): The parent widget for the dialog.
-
-        Returns:
-            Optional[str]: The path where the file was saved, or None if the
-                           operation was cancelled or an error occurred.
-        """
+        # Saves the given text content to a file chosen by the user.
         if not text_content:
             logger.warning("Attempted to save empty text content.")
             return None
@@ -96,18 +57,7 @@ class FileService:
 
     @staticmethod
     def is_valid_image(file_path: str) -> bool:
-        """
-        Validates if a given file path points to a valid and existing image file.
-
-        This method checks for the file's existence and whether its extension
-        is in the list of supported image formats.
-
-        Args:
-            file_path (str): The path to the file to be validated.
-
-        Returns:
-            bool: True if the file is a valid and existing image, False otherwise.
-        """
+        # Validates if a given file path points to a valid and existing image file.
         if not os.path.exists(file_path):
             logger.warning(f"Validation failed: File does not exist at path: {file_path}")
             return False
