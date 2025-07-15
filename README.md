@@ -1,84 +1,217 @@
-# Introduce
-Optical Character Recognition (OCR) is the process that converts an image of text into a machine-readable text format. For example, if you scan a form or a receipt, your computer saves the scan as an image file. You cannot use a text editor to edit, search, or count the words in the image file. However, you can use OCR to convert the image into a text document with its contents stored as text data.
+# OCR Text Recognition Application
 
-[![Super Linter](https://img.shields.io/github/workflow/status/NvChad/NvChad/Super-Linter/main?style=flat-square&logo=github&label=Build&color=8DBBE9)](https://github.com/khanhnguyentuann/recognize-text-from-image-using-ocr)
+A clean, modern OCR (Optical Character Recognition) application built with PySide6 and EasyOCR, following a proper MVC (Model-View-Controller) architecture.
 
-![Customized Card](https://github-readme-stats.vercel.app/api/pin?username=khanhnguyentuann&repo=recognize-text-from-image-using-ocr&title_color=fff&icon_color=f9f9f9&text_color=9f9f9f&bg_color=151515)
+## Features
 
-# Tech Stack 🛠
-The project is built on
+- **Modern GUI**: Built with PySide6 for a responsive and intuitive user interface
+- **Advanced OCR**: Uses EasyOCR for accurate text extraction from images
+- **Multi-language Support**: Supports English and Vietnamese text recognition
+- **Drag & Drop**: Easy image loading via drag and drop functionality
+- **Image Preprocessing**: Automatic image enhancement for better OCR results
+- **Export Functionality**: Save extracted text to files
+- **Clean Architecture**: Proper MVC separation for maintainable code
 
-**Language:** 
-- [Python](https://www.python.org/)
+## Architecture
 
-**Library:** 
-- [OpenCV](https://opencv.org/)
-
-**Framework**
-- [PyQt5](https://pypi.org/project/PyQt5/)
-
-
-# Getting Started 👩‍💻
-
-## I. Set Up ⚙️
-
-Before beginning to work the project make sure you have [git downloaded](https://git-scm.com/downloads) on your computer
-
-Then, you must open _git_ and _git clone_ the repo to your computer: 
-```
-git clone https://github.com/khanhnguyentuann/recognize-text-from-image-using-ocr.git
-cd recognize-text-from-image-using-ocr
-```
-## II. Installing
-
-**1. Python**
- 
- ```
- You can download the latest version here: https://www.python.org/
- ```
-
-**2. pytesseract**
-```
-Steps of Installation:
-1. Install tesseract using windows installer available at: https://github.com/UB-Mannheim/tesseract/wiki
-2. Note the tesseract path from the installation. At the time of this edit, the default installation path was: "C:\Users\USER\AppData\Local\Tesseract-OCR" It may change, so please check the installation path.
-3. pip install pytesseract
-4. Set the tesseract path in the script (in the file image_processing.py)
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\USER\AppData\Local\Tesseract-OCR\tesseract.exe'
-```
-**3. Opencv**
+The application follows a clean MVC (Model-View-Controller) architecture:
 
 ```
-pip install opencv-python
+src/
+├── model/
+│   ├── __init__.py
+│   └── ocr_model.py          # OCRModel - handles image processing and text extraction
+├── view/
+│   ├── __init__.py
+│   └── main_window.py        # MainWindow - PySide6 GUI interface
+├── controller/
+│   ├── __init__.py
+│   └── ocr_controller.py     # OCRController - connects GUI signals to model
+└── __init__.py
 ```
-**4. PyQt5**
+
+### Components
+
+- **OCRModel**: Handles loading image files, preprocessing, and running OCR using EasyOCR
+- **MainWindow**: Builds the GUI using PySide6 components, emits signals for user interactions
+- **OCRController**: Connects the GUI signals to the model, controls application flow
+
+## Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/khanhnguyentuann/ocr-text-recognition.git
+   cd ocr-text-recognition
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the application**:
+   ```bash
+   python app.py
+   ```
+
+## Requirements
+
+- Python 3.7+
+- PySide6 >= 6.0.0
+- EasyOCR >= 1.6.0
+- Pillow >= 9.0.0
+- OpenCV-Python >= 4.5.0
+- pytest >= 7.0.0 (for testing)
+
+## Usage
+
+1. **Launch the application**:
+   ```bash
+   python app.py
+   ```
+
+2. **Load an image**:
+   - Click "File" → "Open" to select an image file
+   - Or drag and drop an image directly onto the application window
+
+3. **Extract text**:
+   - Click the "Extract Text" button or press Ctrl+E
+   - Wait for the OCR processing to complete
+
+4. **Save results**:
+   - Click "File" → "Save" or press Ctrl+S to save the extracted text
+
+## Testing
+
+Run the unit tests to verify OCR functionality:
+
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test file
+pytest tests/test_ocr_model.py
+
+# Run with verbose output
+pytest tests/ -v
+
+# Run manual test
+python tests/test_ocr_model.py
+```
+
+## Supported Image Formats
+
+- PNG (.png)
+- JPEG (.jpg, .jpeg)
+- BMP (.bmp)
+- TIFF (.tiff)
+
+## Project Structure
 
 ```
-pip install PyQt5
+ocr-text-recognition/
+├── src/                      # Source code
+│   ├── model/               # Model layer
+│   ├── view/                # View layer
+│   ├── controller/          # Controller layer
+│   └── __init__.py
+├── tests/                   # Unit tests
+│   ├── __init__.py
+│   └── test_ocr_model.py
+├── resources/               # Application resources
+│   ├── icons/              # UI icons
+│   ├── favicon/            # Application icon
+│   └── input_mages/        # Sample images
+├── app.py                  # Main application entry point
+├── requirements.txt        # Python dependencies
+├── style.qss              # Application stylesheet
+└── README_NEW.md          # This file
 ```
 
-## III. Run 🔥
+## Development
 
+### Adding New Features
+
+1. **Model changes**: Modify `src/model/ocr_model.py` for OCR-related functionality
+2. **View changes**: Modify `src/view/main_window.py` for UI components
+3. **Controller changes**: Modify `src/controller/ocr_controller.py` for business logic
+
+### Code Style
+
+- Follow PEP 8 guidelines
+- Use type hints where appropriate
+- Add docstrings to all classes and methods
+- Write unit tests for new functionality
+
+### Signal-Slot Architecture
+
+The application uses Qt's signal-slot mechanism for communication:
+
+```python
+# View emits signals
+self.extract_text_requested.emit()
+
+# Controller connects to signals
+self.view.extract_text_requested.connect(self.on_extract_text_requested)
 ```
-python main.py
-```
-## IV. Note 📝
 
-a. File 'main.py': Contains the code to run the application, it will import the controller package and call the function that creates the main window.
+## Troubleshooting
 
-b. Package 'model': Contains all the code related to the application's data model.
-  - file '__init__.py': This file is empty and the model directory containing it will be treated as a package by python.
-  - file 'image_processing.py': Contains all the code related to image processing and text extraction using pytesseract.
+### Common Issues
 
-c. Package 'view': Contains all the code related to the application's user interface.
-- file '__init__.py': This file is empty and the model directory containing it will be treated as a package by python.
-- file 'main_window.py': Contains codes related to creating and setting up the main window of the application.
+1. **EasyOCR installation fails**:
+   - Ensure you have sufficient disk space
+   - Try installing with `--no-cache-dir` flag
 
-d. Package 'controller': Contains all the code involved in handling user interaction and updates the model and view accordingly.
-- file '__init__.py': This file is empty and the model directory containing it will be treated as a package by python.
-- file 'text_extractor.py': Contains code to connect controller and view together and handle user interaction
+2. **OCR model not loading**:
+   - Check internet connection (EasyOCR downloads models on first use)
+   - Verify sufficient memory is available
 
-e. Directory: 'resources': Contains all resources such as icons used by the application, images used to extract text.
-- folder: 'icons': Contains icons used by the application such as uploading, extracting and copying icons.
-- folder: 'images': Contains images used to extract text
+3. **GUI not displaying correctly**:
+   - Ensure PySide6 is properly installed
+   - Check if Qt libraries are available
 
+### Performance Tips
+
+- Use image preprocessing for better OCR accuracy
+- Ensure images are high resolution and well-lit
+- Consider image orientation (the app auto-rotates landscape images)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+## Changelog
+
+### Version 2.0 (Current)
+- Complete refactor to MVC architecture
+- Migrated from PyQt5 to PySide6
+- Replaced Tesseract with EasyOCR
+- Added comprehensive unit tests
+- Improved error handling and user feedback
+- Enhanced image preprocessing
+- Added multi-threading for OCR processing
+
+### Version 1.0 (Legacy)
+- Basic OCR functionality with PyQt5
+- Tesseract-based text extraction
+- Simple GUI interface
+
+## Authors
+
+- Original development team: B, N, K, T, T
+- Refactored architecture: Clean MVC implementation
+
+## Acknowledgments
+
+- EasyOCR team for the excellent OCR library
+- Qt/PySide6 team for the GUI framework
+- OpenCV team for image processing capabilities
