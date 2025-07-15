@@ -1,53 +1,49 @@
 # OCR Text Recognition Application
 
-A clean, modern OCR (Optical Character Recognition) application built with PySide6 and EasyOCR, following a proper MVC (Model-View-Controller) architecture.
+A clean, modern OCR (Optical Character Recognition) application built with PySide6 and EasyOCR. This project follows a `Model-View-Controller-Service` architecture to ensure a clear separation of concerns and maintainable code.
 
 ## Features
 
-- **Modern GUI**: Built with PySide6 for a responsive and intuitive user interface
-- **Advanced OCR**: Uses EasyOCR for accurate text extraction from images
-- **Multi-language Support**: Supports English and Vietnamese text recognition
-- **Drag & Drop**: Easy image loading via drag and drop functionality
-- **File Handling**: Open, save, and copy functionality is handled by the controller.
-- **Configuration**: Centralized configuration for resources and constants.
-- **Logging**: Added logging for file errors and OCR failures.
-- **Testing**: Unit tests for both model and controller, with mocks for external dependencies.
-- **Code Quality**: Formatted and linted with PEP8 standards.
+- **Modern GUI**: A responsive and intuitive user interface built with PySide6.
+- **Accurate OCR**: Leverages `EasyOCR` for high-quality text extraction.
+- **Multi-language Support**: Natively supports both English and Vietnamese.
+- **User-Friendly**: Includes drag-and-drop for images, progress indicators, and clipboard integration.
+- **Asynchronous Processing**: Performs OCR in a background thread to keep the UI responsive.
+- **Robust Services**: Dedicated services for file operations, OCR processing, and logging.
+- **Comprehensive Testing**: Includes unit tests with mocked dependencies to ensure reliability.
 
 ## Architecture
 
-The application follows a clean MVC (Model-View-Controller) architecture, with a dedicated module for resource management.
+The application is structured around a `Model-View-Controller-Service` pattern, which separates the application into four interconnected components:
 
 ```
-src/
-├── model/
-│   ├── __init__.py
-│   └── ocr_model.py          # OCRModel - handles image processing and text extraction
-├── view/
-│   ├── __init__.py
-│   └── main_window.py        # MainWindow - PySide6 GUI interface
-├── controller/
-│   ├── __init__.py
-│   └── ocr_controller.py     # OCRController - connects GUI signals to model, handles file I/O and business logic
-└── __init__.py
-
-resources/
-├── __init__.py
-└── resource_config.py      # Manages all resource paths and application constants
-
-tests/
-├── __init__.py
-├── test_ocr_model.py       # Unit tests for the OCR model
-└── test_ocr_controller.py  # Unit tests for the controller, with mocked dependencies
+ocr-text-recognition/
+├── src/
+│   ├── model/
+│   │   └── ocr_model.py        # Handles the core OCR logic via EasyOCR
+│   ├── view/
+│   │   └── main_window.py      # The GUI layer (PySide6)
+│   ├── controller/
+│   │   └── ocr_controller.py   # Connects the view to the services
+│   └── services/
+│       ├── ocr_service.py      # Manages OCR operations and background threading
+│       ├── file_service.py     # Handles file I/O (open/save)
+│       └── log_service.py      # Configures and provides logging
+├── tests/
+│   ├── test_ocr_model.py
+│   └── test_ocr_controller.py
+└── app.py
 ```
 
-### Components
+### Component Roles
 
--   **`OCRModel`**: Responsible for the core OCR logic. It uses `EasyOCR` to extract text from images. It does not interact with the view directly.
--   **`MainWindow`**: The main GUI window. It is responsible for displaying the UI and emitting signals based on user interaction (e.g., button clicks, drag-and-drop). It contains no business logic.
--   **`OCRController`**: Acts as the intermediary between the model and the view. It handles user actions (like opening files, saving text, and requesting OCR), calls the appropriate model methods, and updates the view with the results. It also manages the application's state, such as the current image path.
--   **`resource_config.py`**: A centralized module for managing all application resources, such as icon paths, valid file extensions, and other constants. This makes the application easier to configure and maintain.
--   **`OCRWorker`**: A `QThread` worker that runs the OCR process in the background to prevent the GUI from freezing during long operations.
+-   **Model (`OCRModel`)**: The core of the application, responsible for processing images and extracting text using the `EasyOCR` library. It has no knowledge of the view or controller.
+-   **View (`MainWindow`)**: The user interface. It displays data to the user and emits signals in response to user actions (e.g., button clicks, file drops). It does not contain any business logic.
+-   **Controller (`OCRController`)**: Acts as the central hub, connecting the `View`'s signals to the appropriate `Service` methods. It orchestrates the flow of data between the UI and the application's business logic.
+-   **Services**: A layer of specialized modules that handle distinct business logic:
+    -   `OCRService`: Manages the `OCRModel` and runs text extraction in a background thread (`QThread`) to prevent the UI from freezing.
+    -   `FileService`: Handles all file-related operations, such as opening, validating, and saving files.
+    -   `LogService`: Provides a centralized logging setup for the entire application.
 
 ## Installation
 
@@ -67,33 +63,12 @@ tests/
     python app.py
     ```
 
-## Requirements
-
--   Python 3.7+
--   PySide6 >= 6.0.0
--   EasyOCR >= 1.6.0
--   Pillow >= 9.0.0
--   OpenCV-Python >= 4.5.0
--   pytest >= 7.0.0 (for testing)
--   autopep8 (for code formatting)
-
 ## Usage
 
-1.  **Launch the application**:
-    ```bash
-    python app.py
-    ```
-
-2.  **Load an image**:
-    -   Click "File" → "Open" to select an image file.
-    -   Or drag and drop an image directly onto the application window.
-
-3.  **Extract text**:
-    -   Click the "Extract Text" button or press `Ctrl+E`.
-    -   A progress bar will indicate that OCR is in progress.
-
-4.  **Save results**:
-    -   Click "File" → "Save" or press `Ctrl+S` to save the extracted text to a `.txt` file.
+1.  **Launch the application**.
+2.  **Load an image** by clicking "Open Image" or by dragging and dropping an image file onto the window.
+3.  **Extract text** by clicking the "Extract Text" button. A progress bar will appear while the OCR is running.
+4.  **Copy or save** the extracted text using the "Copy Text" and "Save Text" buttons.
 
 ## Testing
 
@@ -103,49 +78,5 @@ The project includes a suite of unit tests to ensure the reliability of the mode
 # Run all tests
 pytest
 
-# Run tests for a specific file
-pytest tests/test_ocr_controller.py
-
-# Run with verbose output
+# Run tests with verbose output
 pytest -v
-```
-
-## Project Structure
-
-```
-ocr-text-recognition/
-├── src/                      # Source code
-│   ├── controller/          # Controller layer
-│   ├── model/               # Model layer
-│   └── view/                # View layer
-├── tests/                    # Unit tests
-│   ├── __init__.py
-│   ├── test_ocr_controller.py
-│   └── test_ocr_model.py
-├── resources/                # Application resources
-│   ├── assets/
-│   │   ├── icons/
-│   │   └── ui/
-│   └── resource_config.py
-├── .gitignore
-├── app.py                    # Main application entry point
-├── README.md                 # This file
-└── requirements.txt          # Python dependencies
-```
-
-## Development
-
-### Code Style
-
--   The codebase is formatted using `autopep8` to adhere to PEP 8 standards.
--   Type hints are used for clarity and static analysis.
--   Docstrings are provided for all modules, classes, and functions.
-
-### Signal-Slot Architecture
-
-The application relies heavily on Qt's signal-slot mechanism for communication between the view and the controller, ensuring a clean separation of concerns.
-
--   The **View** (`MainWindow`) emits signals when the user performs an action (e.g., `open_file_requested`).
--   The **Controller** (`OCRController`) has slots that are connected to these signals. When a signal is emitted, the corresponding slot in the controller is executed to handle the business logic.
-
-This decoupled architecture makes it easy to modify the UI without affecting the underlying application logic, and vice-versa.
